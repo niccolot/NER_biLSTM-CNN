@@ -109,7 +109,6 @@ def get_embeddings(sentences, labels, word_embedding_file):
     # save unique words and labels in the dataset
     for sentence, sentence_labels in zip(sentences, labels):
         for token, char in sentence:
-            #label_set.add(label)
             words[token.lower()] = True
         for label in sentence_labels:
             label_set.add(label)
@@ -248,4 +247,3 @@ def padding(embedded_dataset):
                                                               maxlen=max_len,
                                                               padding='post')
     return embedded_dataset
-
