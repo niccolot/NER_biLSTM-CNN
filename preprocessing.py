@@ -98,7 +98,7 @@ def get_embeddings(sentences, labels, word_embedding_file):
     :param sentences: (list) list of sentences in the dataset
     :param labels: (list) list of labels paired with the list of sentences
     :param word_embedding_file: (str) path to the pretrained word embedding .txt file
-    :return: (dict, dict, dict, list, list) 3 dictionaries mapping words, casing, chars to
+    :return: (dict, dict, dict, np.array, np.array) 3 dictionaries mapping words, casing, chars to
     integer indices and 2 lists containing the word_embeddings (given by the file) and the
     case_embeddings (given by a lookup table)
     """
@@ -183,7 +183,7 @@ def create_integer_embedding(sentences, labels,  word2idx, label2idx, case2idx, 
     :param label2idx: (dict) dictionary mapping labels to integer indices
     :param case2idx: (dict) dictionary mapping casing info to integer indices
     :param char2idx: (dict) dictionary mapping character info to integer indices
-    :return: (lsit, list, int) the list containing the dataset and labels embedded as integers
+    :return: (list, list, int) the list containing the dataset and labels embedded as integers
     and the number of words in the dataset that were not in the embedding vocabulary and thus
     embedded as 'unknown' words
     """
