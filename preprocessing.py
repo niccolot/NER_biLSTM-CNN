@@ -130,7 +130,7 @@ def get_embeddings(sentences, labels, word_embedding_file):
 
     # in the article the case embedding is done with a lookup table so
     # the casing information in embedded as one-hot vectors
-    case_embeddings = np.identity(len(case2idx), dtype='float32')
+    case_embeddings = np.identity(len(case2idx), dtype='int32')
 
     chars = string.ascii_letters+string.digits+string.punctuation
 
@@ -161,7 +161,7 @@ def get_embeddings(sentences, labels, word_embedding_file):
             word_embeddings.append(vector)
 
         if word.lower() in words:
-            word_vector = np.array([float(num) for num in splits[1:]])
+            word_vector = np.array([num for num in splits[1:]])
             word_embeddings.append(word_vector)
             word2idx[word] = len(word2idx)
 
