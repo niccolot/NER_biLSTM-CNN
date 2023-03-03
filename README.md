@@ -28,4 +28,4 @@ i.e. each word in a line and sentences separated by a new line (\n), will be ok 
 Concerning the padding, the max length for a sentence has been fixed to 50 words and the max character length has been fixed to 15. 
 Both of thees after plotting the distribution of sentences and words length:
 
-<img src='/figs/sentences_length_hist.png' height='300' width='300'>
+<img src= "figs/senteces_length_hist.png" height='350' width='450'>
