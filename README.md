@@ -3,7 +3,7 @@ a CNN embedding layer for character-level embedding.
 
 # Contents
 
-- *data* contains the .txt file from the CoNLL-2003 train dataset, every dataset formatted as 
+- **data** contains the .txt file from the CoNLL-2003 train dataset, every dataset formatted as 
 
 ~~~
 EU NNP B-NP B-ORG
@@ -19,13 +19,13 @@ lamb NN I-NP O
 
 i.e. each word in a line and sentences separated by a new line (\n), will be ok with the preprocessing functions
 
-- *preprocessing.py* contains preprocessing utility functions used from the read of the dataset and embedding .txt file to the output of a suitable dataset
-- *architecture.py* contains the custom classes and a function returning the whole model
-- *train.py* is a script for the training
+- **preprocessing.py** contains preprocessing utility functions used from the read of the dataset and embedding .txt file to the output of a suitable dataset
+- **architecture.py** contains the custom classes and a function returning the whole model
+- **train.py** is a script for the training
 
 # Handpicked hyperparameters
 
 Concerning the padding, the max length for a sentence has been fixed to 50 words and the max character length has been fixed to 15. 
 Both of thees after plotting the distribution of sentences and words length:
 
-<img src='figs/sentences_length_hist.png' height='200' width='300'>
+<img src='figs/sentences_length_hist.png' height='300' width='300'>
