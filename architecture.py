@@ -1,5 +1,8 @@
+import tensorflow as tf
 from tensorflow import keras
 from keras import layers
+tf.config.run_functions_eagerly(True)
+tf.data.experimental.enable_debug_mode()
 
 
 class CharacterEmbedding(layers.Layer):
@@ -7,33 +10,48 @@ class CharacterEmbedding(layers.Layer):
                  char2idx,
                  drop_rate=0.5,
                  embedding_dim=25,
-                 conv_filters=25,
                  name='Character_embedding'):
         super().__init__(name=name)
         self.char2idx = char2idx
         self.drop_rate = drop_rate
         self.embedding_dim = embedding_dim
-        self.conv_filters = conv_filters
 
     def call(self, inputs):
+
         embedded_chars = layers.TimeDistributed(
             layers.Embedding(input_dim=len(self.char2idx),
                              output_dim=self.embedding_dim,
+                             mask_zero=False,
+                             input_length=15,
                              embeddings_initializer=
                              keras.initializers.RandomUniform(minval=-0.5, maxval=0.5)))(inputs)
 
         dropout1 = layers.Dropout(self.drop_rate)(embedded_chars)
 
-        conv = layers.TimeDistributed(layers.Conv1D(filters=self.conv_filters,
+        conv = layers.TimeDistributed(layers.Conv1D(filters=self.embedding_dim,
                                                     kernel_size=3,
                                                     padding='same',
                                                     activation='tanh'))(dropout1)
 
-        pool = layers.TimeDistributed(layers.MaxPool1D(pool_size=50))(conv)
+        pool = layers.TimeDistributed(layers.MaxPool1D(pool_size=15))(conv)
 
-        dropout2 = layers.Dropout(self.drop_rate)(pool)
+        flat = layers.TimeDistributed(layers.Flatten())(pool)
 
-        return dropout2
+        dropout2 = layers.Dropout(self.drop_rate)(flat)
+
+        embedded_chars = layers.TimeDistributed(layers.Flatten())(dropout2)
+
+        return embedded_chars
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'char2idx': self.char2idx,
+            'drop_rate': self.drop_rate,
+            'embedding_dim': self.embedding_dim,
+        })
+
+        return config
 
 
 class WordEmbedding(layers.Layer):
@@ -45,10 +63,21 @@ class WordEmbedding(layers.Layer):
     def call(self, inputs):
         embedded_words = layers.Embedding(input_dim=self.word_embeddings.shape[0],
                                           output_dim=self.word_embeddings.shape[1],
+                                          input_length=50,
+                                          mask_zero=True,
                                           embeddings_initializer=keras.initializers.Constant(self.word_embeddings),
                                           trainable=False)(inputs)
 
         return embedded_words
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'word2idx': self.word2idx,
+            'word_embeddings': self.word_embeddings,
+        })
+
+        return config
 
 
 class CasingEmbedding(layers.Layer):
@@ -65,25 +94,33 @@ class CasingEmbedding(layers.Layer):
 
         return embedded_casing
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'case2idx': self.case2idx,
+            'case_embeddings': self.case_embeddings
+        })
+
+        return config
+
 
 def build_model(word2idx,
-                char2idx,
                 case2idx,
+                char2idx,
                 label2idx,
                 word_embeddings,
                 case_embeddings,
                 lstm_states=275,
                 block_droprate=0.5):
 
-    word_input = layers.Input(shape=(None,), dtype='int32')
-    char_input = layers.Input(shape=(None, 50), dtype='int32')
-    casing_input = layers.Input(shape=(None,), dtype='int32')
+    word_input = layers.Input(shape=(50,), dtype='int32', name='word_input')
+    casing_input = layers.Input(shape=(50,), dtype='int32', name='casing_input')
+    char_input = layers.Input(shape=(50, 15, ), dtype='int32', name='char_input')
 
     embedded_words = WordEmbedding(word2idx=word2idx, word_embeddings=word_embeddings)(word_input)
-    embedded_chars = CharacterEmbedding(char2idx=char2idx)(char_input)
     embedded_casing = CasingEmbedding(case2idx=case2idx, case_embeddings=case_embeddings)(casing_input)
+    embedded_chars = CharacterEmbedding(char2idx=char2idx)(char_input)
 
-    embedded_chars = layers.Reshape((25,1))(embedded_chars)
     concat_input = layers.Concatenate()([embedded_words, embedded_casing, embedded_chars])
 
     lstm = layers.Bidirectional(layers.LSTM(lstm_states,
@@ -93,7 +130,5 @@ def build_model(word2idx,
     output = layers.TimeDistributed(layers.Dense(len(label2idx), activation='softmax'),
                                     name="Softmax_layer")(lstm)
 
-    return keras.Model(inputs=[word_input, char_input, casing_input], outputs=output)
-
-
+    return keras.Model(inputs=[word_input, casing_input, char_input], outputs=output)
 

@@ -33,7 +33,7 @@ def get_lines(file_path):
                 continue
             splits = line.split(' ')
             sentence.append(splits[0])
-            labels_sentence.append(splits[-1])
+            labels_sentence.append(splits[-1].rstrip('\n'))
 
     if len(sentence) > 0 and len(labels_sentence) > 0:
         sentences.append(sentence)
@@ -103,30 +103,34 @@ def get_embeddings(sentences, labels, word_embedding_file):
     case_embeddings (given by a lookup table)
     """
 
-    label_set = set()
     words = {}
 
     # save unique words and labels in the dataset
     for sentence, sentence_labels in zip(sentences, labels):
         for token, char in sentence:
             words[token.lower()] = True
-        for label in sentence_labels:
-            label_set.add(label)
 
     # dict mapping labels to integer indices
-    label2idx = {}
-    for label in label_set:
-        label2idx[label] = len(label2idx)
+    label2idx = {'B-ORG': 1,
+                 'O': 2,
+                 'B-MISC': 3,
+                 'B-PER': 4,
+                 'B-LOC': 5,
+                 'I-PER': 6,
+                 'I-ORG': 7,
+                 'I-LOC': 8,
+                 'I-MISC': 9,
+                 'PADDING': 0}
 
     # dict mapping casing type to integer indices
-    case2idx = {'numeric': 0,
+    case2idx = {'PADDING': 0,
                 'allLower': 1,
                 'allUpper': 2,
                 'initialUpper': 3,
                 'other': 4,
                 'mainly_numeric': 5,
                 'contains_digit': 6,
-                'PADDING_TOKEN': 7}
+                'numeric': 7}
 
     # in the article the case embedding is done with a lookup table so
     # the casing information in embedded as one-hot vectors
@@ -153,7 +157,7 @@ def get_embeddings(sentences, labels, word_embedding_file):
         word = splits[0]
 
         if len(word2idx) == 0:
-            word2idx['PADDING_TOKEN'] = 0
+            word2idx['PADDING'] = 0
             word2idx['UNKNOWN'] = 1
             vector = np.zeros(len(splits)-1)
             word_embeddings.append(vector)
@@ -190,17 +194,18 @@ def create_integer_embedding(sentences, labels,  word2idx, label2idx, case2idx, 
 
     unknown_idx = word2idx['UNKNOWN']
 
-    dataset_embedding = []
-    labels_embedding = []
+    word_dataset = []
+    case_dataset = []
+    char_dataset = []
+    labels_dataset = []
 
     word_count = 0
     unknown_word_count = 0
 
-    for sentence, sentence_labels in zip(sentences, labels):
+    for sentence in sentences:
         word_indices = []
         case_indices = []
         char_indices = []
-        label_indices = []
 
         for word, char in sentence:
             word_count += 1
@@ -219,31 +224,108 @@ def create_integer_embedding(sentences, labels,  word2idx, label2idx, case2idx, 
             case_indices.append(get_casing(word, case2idx))
             char_indices.append(char_idx)
 
+        word_dataset.append(word_indices)
+        case_dataset.append(case_indices)
+        char_dataset.append(char_indices)
+
+    for sentence_labels in labels:
+        label_indices = []
+
         for label in sentence_labels:
             label_indices.append(label2idx[label])
 
-        dataset_embedding.append([word_indices, case_indices, char_indices])
-        labels_embedding.append(label_indices)
+        labels_dataset.append(label_indices)
 
-    return dataset_embedding, labels_embedding, unknown_word_count
+    return word_dataset, case_dataset, char_dataset, labels_dataset, unknown_word_count
 
 
-def padding(embedded_dataset):
+def pad_dataset(word_dataset, case_dataset, chars_dataset, labels):
     """
-    pads the character level integer embedding with zeros as the CNN for character-level
-    embeddings will take as input fixed sized sequences of characters.
-    plotting the frequency of the lengths of all the sentences as a histogram is clear that
-    the great majority of the sentences contain ~50 chars maximum so the 0-padding is set to 50,
-    with a minimal loss of information and resulting in a smaller model (instead of padding
-    all sentences to be as long as the longest in the dataset which is ~130 chars)
+    :param word_dataset: (list)
+    :param case_dataset: (list)
+    :param chars_dataset: (list)
+    :param labels: (list)
+    :return: (np.array, np.array, np.array, np.array) of int32
+    """
+    max_len_seq = 50
+    max_len_chars = 15
 
-    :param embedded_dataset: (list) integer-embedded dataset
-    :return: (list) integer-embedded dataset with the chars 0-padded to be 50 for all the sentences
+    word_dataset = tf.keras.utils.pad_sequences(word_dataset, maxlen=max_len_seq, padding='post')
+    case_dataset = tf.keras.utils.pad_sequences(case_dataset, maxlen=max_len_seq, padding='post')
+
+    # chars padding
+    for i, sentence in enumerate(chars_dataset):
+        chars_dataset[i] = tf.keras.utils.pad_sequences(sentence, maxlen=max_len_chars, padding='post')
+
+    # sequences of chars padding
+    chars_dataset = tf.keras.utils.pad_sequences(chars_dataset, maxlen=max_len_seq, padding='post')
+
+    labels = tf.keras.utils.pad_sequences(labels, maxlen=max_len_seq, padding='post')
+
+    return word_dataset, case_dataset, chars_dataset, labels
+
+
+def get_dataset(data_path, embedding_path):
+    """
+    :param data_path: (str) path to the dataset file
+    :param embedding_path: (str) path to the embedding file
+    :return: (np.array, no.array, np.array, np.array) padded dataset of int32 arrays
     """
 
-    max_len = 50
-    for i, sentence in enumerate(embedded_dataset):
-        embedded_dataset[i][2] = tf.keras.utils.pad_sequences(embedded_dataset[i][2],
-                                                              maxlen=max_len,
-                                                              padding='post')
-    return embedded_dataset
+    x, y = get_lines(data_path)
+    x = get_char_info(x)
+
+    word2idx, \
+        case2idx, \
+        char2idx, \
+        label2idx, \
+        word_embeddings, \
+        case_embeddings = get_embeddings(x, y, embedding_path)
+
+    word_dataset, \
+        case_dataset, \
+        chars_dataset, \
+        labels_embedding, \
+        unknown_word_count = create_integer_embedding(x,
+                                                      y,
+                                                      word2idx,
+                                                      label2idx,
+                                                      case2idx,
+                                                      char2idx)
+
+    word_dataset, \
+        case_dataset, \
+        chars_dataset, \
+        labels = pad_dataset(word_dataset,
+                             case_dataset,
+                             chars_dataset,
+                             labels_embedding)
+
+    return word_dataset, case_dataset, chars_dataset, labels
+
+
+def get_dicts_and_embeddings(data_path, embedding_path):
+    """
+    :param data_path: (str)
+    :param embedding_path: (str)
+    :return: (dict, dict, dict, dict, np.array, np.array)
+    """
+
+    x, y = get_lines(data_path)
+    x = get_char_info(x)
+
+    word2idx, \
+        case2idx, \
+        char2idx, \
+        label2idx, \
+        word_embeddings, \
+        case_embeddings = get_embeddings(x, y, embedding_path)
+
+    return word2idx, case2idx, char2idx, label2idx, word_embeddings, case_embeddings
+
+
+
+
+
+
+
