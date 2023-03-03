@@ -1,7 +1,9 @@
+# NER_biLSTM-CNN
+
 Implementation of the named entity recognition (NER) neural network based on the article https://arxiv.org/abs/1511.08308, featuring in particular 
 a CNN embedding layer for character-level embedding.
 
-# Contents
+## Contents
 
 - **data** contains the .txt file from the CoNLL-2003 train dataset, every dataset formatted as 
 
@@ -23,11 +25,11 @@ i.e. each word in a line and sentences separated by a new line (\n), will be ok 
 - **architecture.py** contains the custom classes and a function returning the whole model
 - **train.py** is a script for the training
 
-# Handpicked hyperparameters
+## Handpicked hyperparameters
 
 Concerning the padding, the max length for a sentence has been fixed to 50 words and the max character length has been fixed to 15. 
 Both of thees after plotting the distribution of sentences and words length:
 
-<img src= "figs/senteces_length_hist.png" height='350' width='450'> <img src= "figs/words_length.png" height='350' width='450'>
+<img src= "figs/senteces_length_hist.png" height='350' width='550'>  <img src= "figs/words_length.png" height='350' width='550'>
 
 it is clear that most sentences have at most 50 words and most words have at most 15 characters.
