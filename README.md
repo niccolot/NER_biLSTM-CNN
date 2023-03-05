@@ -25,7 +25,7 @@ i.e. each word in a line and sentences separated by a new line (\n), will be ok 
 - **architecture.py** contains the custom classes and a function returning the whole model
 - **train.py** is a script for the training
 
-## Handpicked hyperparameters
+## Padding
 
 Concerning the padding, the max length for a sentence has been fixed to 50 words and the max character length has been fixed to 15. 
 Both of thees after plotting the distribution of sentences and words length:
@@ -33,3 +33,7 @@ Both of thees after plotting the distribution of sentences and words length:
 <img src= "figs/senteces_length_hist.png" height='350' width='550'>  <img src= "figs/words_length.png" height='350' width='550'>
 
 it is clear that most sentences have at most 50 words and most words have at most 15 characters.
+
+## WordEmbedding
+
+The 50 dimensional GloVe wordembedding has been used as pretrained embedding, in order to build the model one has to load the .txt file, available at https://nlp.stanford.edu/projects/glove/ or on Kaggle
