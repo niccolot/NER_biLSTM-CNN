@@ -7,31 +7,21 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
-lr = 5e-5
-epochs = 200
+lr = 1e-4
+epochs = 1
 batch_size = 64
 
-
-word_dataset_train, \
-    case_dataset_train, \
-    chars_dataset_train, \
-    labels_train = preprocessing.get_dataset('train_data.txt', 'glove.6B.50d.txt')
-
+train_data_list, val_data_list, labels_train, labels_val = preprocessing.get_dataset('train_data.txt',
+                                                                                     'val_data.txt',
+                                                                                     'glove.6B.50d.txt')
 word2idx,\
     case2idx,\
     char2idx,\
     label2idx,\
     word_embeddings,\
-    case_embeddings = preprocessing.get_dicts_and_embeddings('train_data.txt', 'glove.6B.50d.txt')
-
-word_dataset, \
-    case_dataset, \
-    chars_dataset, \
-    labels = preprocessing.get_dataset('val_data.txt', 'glove.6B.50d.txt')
-
-x_train_list = [word_dataset_train, case_dataset_train, chars_dataset_train]
-x_val_list = [word_dataset, case_dataset, chars_dataset]
-
+    case_embeddings = preprocessing.get_dicts_and_embeddings('data/train_data.txt',
+                                                             'data/val_data.txt',
+                                                             'glove.6B.50d.txt')
 
 model = architecture.build_model(word2idx=word2idx,
                                  case2idx=case2idx,
@@ -49,9 +39,9 @@ callbacks = [tf.keras.callbacks.EarlyStopping(patience=20, monitor="val_loss")]
 
 model.summary()
 
-history = model.fit(x=x_train_list,
+history = model.fit(x=train_data_list,
                     y=labels_train,
                     epochs=epochs,
                     batch_size=batch_size,
-                    validation_data=(x_val_list, labels),
+                    validation_data=(val_data_list, labels_val),
                     callbacks=callbacks)

@@ -12,7 +12,7 @@ def get_lines(file_path):
     [['B-ORG\n', 'O\n', 'B-MISC\n', 'O\n', 'O\n', 'O\n', 'B-MISC\n', 'O\n', 'O\n'], ...]
 
     :param file_path: (str) path to the file
-    :return: (list. list) list of lists where each element is a sentence and each element of
+    :return: (list, list) list of lists where each element is a sentence and each element of
     the sublist is a word in that sentence and respective list of lists with a
     label for each word
     """
@@ -265,54 +265,24 @@ def pad_dataset(word_dataset, case_dataset, chars_dataset, labels):
     return word_dataset, case_dataset, chars_dataset, labels
 
 
-def get_dataset(data_path, embedding_path):
+def get_dicts_and_embeddings(data_path_train, data_path_val, embedding_path):
     """
-    :param data_path: (str) path to the dataset file
-    :param embedding_path: (str) path to the embedding file
-    :return: (np.array, no.array, np.array, np.array) padded dataset of int32 arrays
-    """
+    this function does the same thing as 'get_embeddings' but given directly the
+    paths and not the list, used when the model is built
 
-    x, y = get_lines(data_path)
-    x = get_char_info(x)
-
-    word2idx, \
-        case2idx, \
-        char2idx, \
-        label2idx, \
-        word_embeddings, \
-        case_embeddings = get_embeddings(x, y, embedding_path)
-
-    word_dataset, \
-        case_dataset, \
-        chars_dataset, \
-        labels_embedding, \
-        unknown_word_count = create_integer_embedding(x,
-                                                      y,
-                                                      word2idx,
-                                                      label2idx,
-                                                      case2idx,
-                                                      char2idx)
-
-    word_dataset, \
-        case_dataset, \
-        chars_dataset, \
-        labels = pad_dataset(word_dataset,
-                             case_dataset,
-                             chars_dataset,
-                             labels_embedding)
-
-    return word_dataset, case_dataset, chars_dataset, labels
-
-
-def get_dicts_and_embeddings(data_path, embedding_path):
-    """
-    :param data_path: (str)
+    :param data_path_train: (str)
+    :param data_path_val: (str)
     :param embedding_path: (str)
     :return: (dict, dict, dict, dict, np.array, np.array)
     """
 
-    x, y = get_lines(data_path)
-    x = get_char_info(x)
+    x1, y1 = get_lines(data_path_train)
+    x1 = get_char_info(x1)
+    x2, y2 = get_lines(data_path_val)
+    x2 = get_char_info(x2)
+
+    x = x1 + x2
+    y = y1 + y2
 
     word2idx, \
         case2idx, \
@@ -324,8 +294,68 @@ def get_dicts_and_embeddings(data_path, embedding_path):
     return word2idx, case2idx, char2idx, label2idx, word_embeddings, case_embeddings
 
 
+def get_dataset(data_path_train, data_path_val, embedding_path):
+    """
+    :param data_path_train: (str)
+    :param data_path_val: (str)
+    :param embedding_path: (str) path to the embedding file
+    :return: (np.array, no.array, np.array, np.array) padded dataset of int32 arrays
+    """
 
+    x1, y1 = get_lines(data_path_train)
+    x1 = get_char_info(x1)
+    x2, y2 = get_lines(data_path_val)
+    x2 = get_char_info(x2)
 
+    x = x1+x2
+    y = y1+y2
 
+    word2idx, \
+        case2idx, \
+        char2idx, \
+        label2idx, \
+        word_embeddings, \
+        case_embeddings = get_embeddings(x, y, embedding_path)
 
+    word_dataset_train, \
+        case_dataset_train, \
+        chars_dataset_train, \
+        labels_embedding_train, \
+        unknown_word_count_train = create_integer_embedding(x1,
+                                                            y1,
+                                                            word2idx,
+                                                            label2idx,
+                                                            case2idx,
+                                                            char2idx)
 
+    word_dataset_train, \
+        case_dataset_train, \
+        chars_dataset_train, \
+        labels_train = pad_dataset(word_dataset_train,
+                                   case_dataset_train,
+                                   chars_dataset_train,
+                                   labels_embedding_train)
+
+    word_dataset_val, \
+        case_dataset_val, \
+        chars_dataset_val, \
+        labels_embedding_val, \
+        unknown_word_count_val = create_integer_embedding(x2,
+                                                          y2,
+                                                          word2idx,
+                                                          label2idx,
+                                                          case2idx,
+                                                          char2idx)
+
+    word_dataset_val, \
+        case_dataset_val, \
+        chars_dataset_val, \
+        labels_val = pad_dataset(word_dataset_val,
+                                 case_dataset_val,
+                                 chars_dataset_val,
+                                 labels_embedding_val)
+
+    train_data_list = [word_dataset_train, case_dataset_train, chars_dataset_train]
+    val_data_list = [word_dataset_val, case_dataset_val, chars_dataset_val]
+
+    return train_data_list, val_data_list, labels_train, labels_val

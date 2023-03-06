@@ -37,3 +37,23 @@ it is clear that most sentences have at most 50 words and most words have at mos
 ## WordEmbedding
 
 The 50 dimensional GloVe wordembedding has been used as pretrained embedding, in order to build the model one has to load the .txt file, available at https://nlp.stanford.edu/projects/glove/ or on Kaggle
+
+## Results
+
+Using the ```seqeval``` package (https://github.com/chakki-works/seqeval) the following results have been obtained on the dev set:
+
+```
+              precision    recall  f1-score   support
+
+         LOC       0.87      0.96      0.91      1829
+        MISC       0.82      0.69      0.75       919
+         ORG       0.85      0.80      0.83      1340
+         PER       0.90      0.97      0.93      1794
+
+   micro avg       0.87      0.88      0.88      5882
+   macro avg       0.86      0.85      0.85      5882
+weighted avg       0.87      0.88      0.87      5882
+
+```
+
+probabliy improovable optimizing the hyperparameters but coherent with the article

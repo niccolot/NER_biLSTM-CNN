@@ -5,7 +5,7 @@ from keras import layers
 class CharacterEmbedding(layers.Layer):
     def __init__(self,
                  char2idx,
-                 drop_rate=0.6,
+                 drop_rate=0.5,
                  embedding_dim=53,
                  name='Character_embedding',
                  **kwargs):
@@ -121,8 +121,8 @@ def build_model(word2idx,
                 word_embeddings,
                 case_embeddings,
                 lstm_states=275,
-                droprate=0.6,
-                block_droprate=0.6):
+                droprate=0.5,
+                block_droprate=0.5):
 
     word_input = layers.Input(shape=(50,), dtype='int32', name='word_input')
     casing_input = layers.Input(shape=(50,), dtype='int32', name='casing_input')
@@ -143,4 +143,3 @@ def build_model(word2idx,
                                     name="Softmax_layer")(lstm)
 
     return keras.Model(inputs=[word_input, casing_input, char_input], outputs=output)
-
