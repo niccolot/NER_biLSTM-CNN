@@ -21,7 +21,7 @@ lamb NN I-NP O
 
 i.e. each word in a line and sentences separated by a new line (\n), will be ok with the preprocessing functions
 
-- **preprocessing.py** contains preprocessing utility functions used from the read of the dataset and embedding .txt file to the output of a suitable dataset
+- **preprocessing.py** contains preprocessing utility functions used from the load of the dataset and embedding .txt file to the output of a suitable dataset
 - **architecture.py** contains the custom classes and a function returning the whole model
 - **train.py** is a script for the training
 
