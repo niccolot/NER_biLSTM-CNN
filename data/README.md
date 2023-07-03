@@ -1,1 +1,1 @@
-Some lines containing garbage such as sequences of '----' has been cancelled 
+Some lines containing garbage such as sequences of '----' have been cancelled 
